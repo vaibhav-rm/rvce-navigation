@@ -4,116 +4,316 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus GPS Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; text-align: center; background-color: #f0f0f0; }
-        h1 { margin-bottom: 20px; font-size: 24px; }
-        .status-box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .data-value { font-weight: bold; font-family: monospace; font-size: 1.2em; color: #007bff; }
-        
-        button {
-            display: block;
-            width: 100%;
-            padding: 20px;
-            margin: 15px 0;
-            font-size: 20px;
-            border: none;
-            border-radius: 12px;
-            color: white;
-            cursor: pointer;
-            transition: opacity 0.2s;
+        :root {
+            --primary: #6C5DD3;
+            --primary-hover: #5b4cc4;
+            --accent: #FF754C;
+            --success: #33D69F;
+            --danger: #FF4D4D;
+            --dark-bg: #11142D;
+            --card-bg: #1B1D3A;
+            --text-main: #FFFFFF;
+            --text-secondary: #808191;
+            --font-family: 'Outfit', sans-serif;
         }
-        button:active { opacity: 0.8; }
-        
-        #markBuildingBtn { background-color: #4CAF50; } /* Green */
-        #pathBtn { background-color: #2196F3; } /* Blue */
-        #pathBtn.recording { background-color: #F44336; } /* Red */
-        #downloadBtn { background-color: #607D8B; } /* Grey */
-        #resetBtn { background-color: #9E9E9E; font-size: 14px; padding: 10px; margin-top: 30px;}
 
-        .log { text-align: left; background: #fff; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-size: 12px; }
-        .log-item { border-bottom: 1px solid #eee; padding: 5px 0; }
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 24px;
+            margin-bottom: 25px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: monospace;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(51, 214, 159, 0.15);
+            color: var(--success);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge.error {
+            background: rgba(255, 77, 77, 0.15);
+            color: var(--danger);
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: var(--font-family);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108, 93, 211, 0.4);
+        }
+        
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-accent {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 117, 76, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #0f3e2e;
+            box-shadow: 0 4px 15px rgba(51, 214, 159, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+        }
+        
+        .btn-recording {
+            background: var(--danger);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+        }
+
+        .data-counter {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .log-container {
+            width: 100%;
+            max-width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            padding: 15px;
+        }
+
+        .log-item {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .log-item:first-child { color: var(--text-main); font-weight: 500; }
+
+        .icon { font-size: 20px; }
+
     </style>
 </head>
 <body>
 
-    <h1>🛰️ Campus GPS Tracker</h1>
+    <h1>Campus Tracker</h1>
 
-    <div class="status-box">
-        <div>Accuracy: <span id="accuracy" class="data-value">Wait...</span></div>
-        <div>Lat: <span id="lat" class="data-value">---</span></div>
-        <div>Lng: <span id="lng" class="data-value">---</span></div>
+    <div class="card">
+        <div id="gpsStatusBadge" class="status-badge">Waiting for GPS...</div>
+        
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Accuracy</span>
+                <span id="accuracy" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Latitude</span>
+                <span id="lat" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Longitude</span>
+                <span id="lng" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Satellites</span>
+                <span class="stat-value">Active</span>
+            </div>
+        </div>
     </div>
 
-    <button id="markBuildingBtn">📍 Mark Building Here</button>
-    <button id="pathBtn">🚶 Start Path Recording</button>
-    
-    <div class="status-box">
-        <strong>Recorded Data:</strong>
-        <div id="counts">Buildings: 0 | Paths: 0</div>
+    <div style="width: 100%; max-width: 400px;">
+        <button id="markBuildingBtn" class="btn-success">
+            Mark Building
+        </button>
+        
+        <button id="pathBtn" class="btn-primary">
+            Start Path
+        </button>
+
+        <div class="data-counter">
+            <div id="counts">Buildings: 0 | Paths: 0</div>
+        </div>
+
+        <button id="downloadBtn" class="btn-outline">
+             Download Data
+        </button>
+        
+        <button id="resetBtn" class="btn-outline" style="font-size: 14px; padding: 12px; opacity: 0.7;">
+             Reset
+        </button>
     </div>
 
-    <button id="downloadBtn">💾 Download data.geojson</button>
-
-    <h3>Activity Log</h3>
-    <div id="log" class="log"></div>
-    
-    <button id="resetBtn">⚠️ Reset All Data</button>
+    <div class="log-container" id="log">
+        <div class="log-item">Ready to start tracking...</div>
+    </div>
 
 <script>
     // State
     let currentPos = null;
     let isRecordingPath = false;
     let currentPath = [];
-    let watchId = null;
+    
+    // UI Elements
+    const els = {
+        lat: document.getElementById('lat'),
+        lng: document.getElementById('lng'),
+        acc: document.getElementById('accuracy'),
+        status: document.getElementById('gpsStatusBadge'),
+        markBtn: document.getElementById('markBuildingBtn'),
+        pathBtn: document.getElementById('pathBtn'),
+        downloadBtn: document.getElementById('downloadBtn'),
+        log: document.getElementById('log'),
+        counts: document.getElementById('counts')
+    };
 
-    // Load existing data or init
+    // Load Data
     let collectedData = JSON.parse(localStorage.getItem('campus_tracker_data')) || {
         type: "FeatureCollection",
         features: []
     };
 
-    // UI Updates
     const updateCounts = () => {
         const buildings = collectedData.features.filter(f => f.geometry.type === 'Point').length;
         const paths = collectedData.features.filter(f => f.geometry.type === 'LineString').length;
-        document.getElementById('counts').innerText = `Buildings: ${buildings} | Paths: ${paths}`;
+        els.counts.innerHTML = `Buildings: <b>${buildings}</b> &nbsp;|&nbsp; Paths: <b>${paths}</b>`;
     }
     
     const logMsg = (msg) => {
         const div = document.createElement('div');
         div.className = 'log-item';
-        div.innerText = new Date().toLocaleTimeString() + ': ' + msg;
-        document.getElementById('log').prepend(div);
+        div.innerHTML = `<span style="opacity:0.6">${new Date().toLocaleTimeString().slice(0,5)}</span> ${msg}`;
+        els.log.prepend(div);
     }
 
     // Geolocation
     if ('geolocation' in navigator) {
         navigator.geolocation.watchPosition((pos) => {
             currentPos = pos.coords;
-            document.getElementById('lat').innerText = pos.coords.latitude.toFixed(5);
-            document.getElementById('lng').innerText = pos.coords.longitude.toFixed(5);
-            document.getElementById('accuracy').innerText = Math.round(pos.coords.accuracy) + 'm';
+            els.lat.innerText = pos.coords.latitude.toFixed(5);
+            els.lng.innerText = pos.coords.longitude.toFixed(5);
+            els.acc.innerText = Math.round(pos.coords.accuracy) + 'm';
+            els.status.innerText = "GPS Active";
+            els.status.classList.remove('error');
             
-            // Record path point if active
             if (isRecordingPath) {
-                // GeoJSON format: [Lon, Lat]
                 currentPath.push([pos.coords.longitude, pos.coords.latitude]);
-                document.getElementById('pathBtn').innerText = `🛑 Stop Path (${currentPath.length} pts)`;
+                els.pathBtn.innerHTML = `Stop Path (${currentPath.length}pts)`;
             }
         }, (err) => {
-            document.getElementById('accuracy').innerText = "Error";
+            els.status.innerText = "GPS Error";
+            els.status.classList.add('error');
             logMsg("GPS Error: " + err.message);
-        }, {
-            enableHighAccuracy: true,
-            maximumAge: 0
-        });
+        }, { enableHighAccuracy: true, maximumAge: 0 });
     } else {
-        alert("Geolocation not supported via this browser/connection.");
+        alert("Geolocation not supported.");
     }
 
     // Actions
-    document.getElementById('markBuildingBtn').addEventListener('click', () => {
-        if(!currentPos) return alert("Waiting for GPS...");
+    els.markBtn.addEventListener('click', () => {
+        if(!currentPos) return alert("Waiting for GPS signal...");
+        
+        // Simple distinct vibration
+        if(navigator.vibrate) navigator.vibrate(50);
+        
         const name = prompt("Enter Building Name:");
         if(!name) return;
 
@@ -128,27 +328,30 @@
         
         collectedData.features.push(feature);
         saveData();
-        logMsg(`Saved Building: ${name}`);
+        logMsg(`Saved: ${name}`);
     });
 
-    document.getElementById('pathBtn').addEventListener('click', () => {
-        if(!currentPos) return alert("Waiting for GPS...");
+    els.pathBtn.addEventListener('click', () => {
+        if(!currentPos) return alert("Waiting for GPS signal...");
         
         if (!isRecordingPath) {
-            // Start
-            const confirmStart = confirm("Start walking now? Stay on the path!");
-            if(!confirmStart) return;
+            if(!confirm("Start walking now? Stay on the path!")) return;
+            
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
             
             isRecordingPath = true;
-            currentPath = [[currentPos.longitude, currentPos.latitude]]; // Start point
-            document.getElementById('pathBtn').classList.add('recording');
-            document.getElementById('pathBtn').innerText = "🛑 Stop Path (1 pts)";
+            currentPath = [[currentPos.longitude, currentPos.latitude]];
+            els.pathBtn.classList.add('btn-recording');
+            els.pathBtn.classList.remove('btn-primary');
+            els.pathBtn.innerHTML = `Stop Path (1pts)`;
             logMsg("Started recording path...");
         } else {
-            // Stop
+            if(navigator.vibrate) navigator.vibrate(200);
+            
             isRecordingPath = false;
-            document.getElementById('pathBtn').classList.remove('recording');
-            document.getElementById('pathBtn').innerText = "🚶 Start Path Recording";
+            els.pathBtn.classList.remove('btn-recording');
+            els.pathBtn.classList.add('btn-primary');
+            els.pathBtn.innerHTML = `Start Path`;
             
             if (currentPath.length > 1) {
                 const feature = {
@@ -161,7 +364,7 @@
                 };
                 collectedData.features.push(feature);
                 saveData();
-                logMsg(`Saved Path (${currentPath.length} points)`);
+                logMsg(`Path saved (${currentPath.length} points)`);
             } else {
                 logMsg("Path too short, discarded.");
             }
@@ -169,7 +372,7 @@
         }
     });
 
-    document.getElementById('downloadBtn').addEventListener('click', () => {
+    els.downloadBtn.addEventListener('click', () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(collectedData, null, 2));
         const a = document.createElement('a');
         a.href = dataStr;
@@ -178,7 +381,7 @@
     });
     
     document.getElementById('resetBtn').addEventListener('click', () => {
-        if(confirm("Delete all recorded data? This cannot be undone.")) {
+        if(confirm("Delete all recorded data?")) {
             localStorage.removeItem('campus_tracker_data');
             collectedData = { type: "FeatureCollection", features: [] };
             updateCounts();
@@ -191,9 +394,7 @@
         updateCounts();
     }
 
-    // Init
     updateCounts();
-
 </script>
 </body>
 </html>
