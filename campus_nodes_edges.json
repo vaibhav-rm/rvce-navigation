@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "name": "Test Point Building",
+      "lat": 12.9239,
+      "lng": 77.4997,
+      "accessible": true,
+      "type": "path"
+    },
+    {
+      "id": 2,
+      "name": "",
+      "lat": 12.924,
+      "lng": 77.4998,
+      "accessible": true,
+      "type": "path"
+    }
+  ],
+  "edges": [
+    {
+      "from": 1,
+      "to": 2,
+      "distance": 15.527436090060844,
+      "time": 11.09102577861489,
+      "accessible": true,
+      "name": ""
+    },
+    {
+      "from": 1,
+      "to": 2,
+      "distance": 15.527436090060844,
+      "time": 11.09102577861489,
+      "accessible": true
+    },
+    {
+      "from": 2,
+      "to": 1,
+      "distance": 15.527436090060844,
+      "time": 11.09102577861489,
+      "accessible": true
+    }
+  ]
+}

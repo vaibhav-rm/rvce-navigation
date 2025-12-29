@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus GPS Tracker</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; text-align: center; background-color: #f0f0f0; }
+        h1 { margin-bottom: 20px; font-size: 24px; }
+        .status-box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .data-value { font-weight: bold; font-family: monospace; font-size: 1.2em; color: #007bff; }
+        
+        button {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            margin: 15px 0;
+            font-size: 20px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.8; }
+        
+        #markBuildingBtn { background-color: #4CAF50; } /* Green */
+        #pathBtn { background-color: #2196F3; } /* Blue */
+        #pathBtn.recording { background-color: #F44336; } /* Red */
+        #downloadBtn { background-color: #607D8B; } /* Grey */
+        #resetBtn { background-color: #9E9E9E; font-size: 14px; padding: 10px; margin-top: 30px;}
+
+        .log { text-align: left; background: #fff; padding: 10px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-size: 12px; }
+        .log-item { border-bottom: 1px solid #eee; padding: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>🛰️ Campus GPS Tracker</h1>
+
+    <div class="status-box">
+        <div>Accuracy: <span id="accuracy" class="data-value">Wait...</span></div>
+        <div>Lat: <span id="lat" class="data-value">---</span></div>
+        <div>Lng: <span id="lng" class="data-value">---</span></div>
+    </div>
+
+    <button id="markBuildingBtn">📍 Mark Building Here</button>
+    <button id="pathBtn">🚶 Start Path Recording</button>
+    
+    <div class="status-box">
+        <strong>Recorded Data:</strong>
+        <div id="counts">Buildings: 0 | Paths: 0</div>
+    </div>
+
+    <button id="downloadBtn">💾 Download data.geojson</button>
+
+    <h3>Activity Log</h3>
+    <div id="log" class="log"></div>
+    
+    <button id="resetBtn">⚠️ Reset All Data</button>
+
+<script>
+    // State
+    let currentPos = null;
+    let isRecordingPath = false;
+    let currentPath = [];
+    let watchId = null;
+
+    // Load existing data or init
+    let collectedData = JSON.parse(localStorage.getItem('campus_tracker_data')) || {
+        type: "FeatureCollection",
+        features: []
+    };
+
+    // UI Updates
+    const updateCounts = () => {
+        const buildings = collectedData.features.filter(f => f.geometry.type === 'Point').length;
+        const paths = collectedData.features.filter(f => f.geometry.type === 'LineString').length;
+        document.getElementById('counts').innerText = `Buildings: ${buildings} | Paths: ${paths}`;
+    }
+    
+    const logMsg = (msg) => {
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        div.innerText = new Date().toLocaleTimeString() + ': ' + msg;
+        document.getElementById('log').prepend(div);
+    }
+
+    // Geolocation
+    if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition((pos) => {
+            currentPos = pos.coords;
+            document.getElementById('lat').innerText = pos.coords.latitude.toFixed(5);
+            document.getElementById('lng').innerText = pos.coords.longitude.toFixed(5);
+            document.getElementById('accuracy').innerText = Math.round(pos.coords.accuracy) + 'm';
+            
+            // Record path point if active
+            if (isRecordingPath) {
+                // GeoJSON format: [Lon, Lat]
+                currentPath.push([pos.coords.longitude, pos.coords.latitude]);
+                document.getElementById('pathBtn').innerText = `🛑 Stop Path (${currentPath.length} pts)`;
+            }
+        }, (err) => {
+            document.getElementById('accuracy').innerText = "Error";
+            logMsg("GPS Error: " + err.message);
+        }, {
+            enableHighAccuracy: true,
+            maximumAge: 0
+        });
+    } else {
+        alert("Geolocation not supported via this browser/connection.");
+    }
+
+    // Actions
+    document.getElementById('markBuildingBtn').addEventListener('click', () => {
+        if(!currentPos) return alert("Waiting for GPS...");
+        const name = prompt("Enter Building Name:");
+        if(!name) return;
+
+        const feature = {
+            type: "Feature",
+            properties: { name: name },
+            geometry: {
+                type: "Point",
+                coordinates: [currentPos.longitude, currentPos.latitude]
+            }
+        };
+        
+        collectedData.features.push(feature);
+        saveData();
+        logMsg(`Saved Building: ${name}`);
+    });
+
+    document.getElementById('pathBtn').addEventListener('click', () => {
+        if(!currentPos) return alert("Waiting for GPS...");
+        
+        if (!isRecordingPath) {
+            // Start
+            const confirmStart = confirm("Start walking now? Stay on the path!");
+            if(!confirmStart) return;
+            
+            isRecordingPath = true;
+            currentPath = [[currentPos.longitude, currentPos.latitude]]; // Start point
+            document.getElementById('pathBtn').classList.add('recording');
+            document.getElementById('pathBtn').innerText = "🛑 Stop Path (1 pts)";
+            logMsg("Started recording path...");
+        } else {
+            // Stop
+            isRecordingPath = false;
+            document.getElementById('pathBtn').classList.remove('recording');
+            document.getElementById('pathBtn').innerText = "🚶 Start Path Recording";
+            
+            if (currentPath.length > 1) {
+                const feature = {
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                        type: "LineString",
+                        coordinates: currentPath
+                    }
+                };
+                collectedData.features.push(feature);
+                saveData();
+                logMsg(`Saved Path (${currentPath.length} points)`);
+            } else {
+                logMsg("Path too short, discarded.");
+            }
+            currentPath = [];
+        }
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(collectedData, null, 2));
+        const a = document.createElement('a');
+        a.href = dataStr;
+        a.download = "data.geojson";
+        a.click();
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        if(confirm("Delete all recorded data? This cannot be undone.")) {
+            localStorage.removeItem('campus_tracker_data');
+            collectedData = { type: "FeatureCollection", features: [] };
+            updateCounts();
+            logMsg("Data reset.");
+        }
+    });
+
+    const saveData = () => {
+        localStorage.setItem('campus_tracker_data', JSON.stringify(collectedData));
+        updateCounts();
+    }
+
+    // Init
+    updateCounts();
+
+</script>
+</body>
+</html>
