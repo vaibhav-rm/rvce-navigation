@@ -103,8 +103,7 @@ function dijkstra(
   graph,
   startId,
   endId,
-  criteria = "distance",
-  accessibility = true
+  criteria = "distance"
 ) {
   const distances = {};
   const previous = {};
@@ -127,10 +126,6 @@ function dijkstra(
 
     const neighbors = graph.adjacencyList.get(currentId) || [];
     neighbors.forEach((neighbor) => {
-      if (accessibility && !neighbor.accessible) {
-        return; // Skip non-accessible paths
-      }
-
       const weight = neighbor.weight;
       const alt = distances[currentId] + weight;
       if (alt < distances[neighbor.to]) {

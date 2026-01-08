@@ -119,8 +119,8 @@ fetch("campus_nodes_edges.json")
     document.getElementById("findRoute").addEventListener("click", () => {
       const startName = document.getElementById("start").value;
       const endName = document.getElementById("end").value;
+
       const algorithm = document.getElementById("algorithm").value;
-      const accessibility = document.getElementById("accessibility").checked;
 
       const startNodeIds = nodesByName[startName].map((node) => node.id);
       const endNodeIds = nodesByName[endName].map((node) => node.id);
@@ -146,7 +146,7 @@ fetch("campus_nodes_edges.json")
               path = dfs(graph, startId, endId);
               break;
             case "dijkstra":
-              path = dijkstra(graph, startId, endId, "distance", accessibility);
+              path = dijkstra(graph, startId, endId, "distance");
               break;
           }
 

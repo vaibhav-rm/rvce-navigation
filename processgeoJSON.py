@@ -40,7 +40,7 @@ def find_nearest_node(lat, lon, nodes, exclude_id=None, exclude_types=None):
             nearest_node_id = node_id
     return nearest_node_id
 
-def connect_node_to_nearest_node(node_id, lat, lon, nodes, edges, accessible, exclude_types=None):
+def connect_node_to_nearest_node(node_id, lat, lon, nodes, edges, exclude_types=None):
     """
     Connects a node to the nearest node in the graph, excluding nodes of certain types.
     """
@@ -56,13 +56,11 @@ def connect_node_to_nearest_node(node_id, lat, lon, nodes, edges, accessible, ex
             )
             time = distance / 1.4  # Average walking speed in m/s
 
-            # Create the edge from node to nearest node
             edge = {
                 'from': node_id,
                 'to': nearest_node_id,
                 'distance': distance,
-                'time': time,
-                'accessible': accessible
+                'time': time
             }
             edges.append(edge)
 
@@ -71,8 +69,7 @@ def connect_node_to_nearest_node(node_id, lat, lon, nodes, edges, accessible, ex
                 'from': nearest_node_id,
                 'to': node_id,
                 'distance': distance,
-                'time': time,
-                'accessible': accessible
+                'time': time
             }
             edges.append(reverse_edge)
 
@@ -133,7 +130,6 @@ for feature in line_features:
                 'name': '',  # Paths typically don't have names
                 'lat': lat,
                 'lng': lon,
-                'accessible': accessible,
                 'type': 'path'
             }
         nodes_in_way.append(node_id)
@@ -156,10 +152,19 @@ for feature in line_features:
             'to': to_node_id,
             'distance': distance,
             'time': time,
-            'accessible': accessible,
             'name': ''  # Paths typically don't have names
         }
         edges.append(edge)
+
+        # Create reverse edge for bidirectional path
+        reverse_edge = {
+            'from': to_node_id,
+            'to': from_node_id,
+            'distance': distance,
+            'time': time,
+            'name': ''
+        }
+        edges.append(reverse_edge)
 
 # Process Polygon features next (buildings)
 for feature in polygon_features:
@@ -195,14 +200,13 @@ for feature in polygon_features:
                     'name': feature_name,
                     'lat': lat,
                     'lng': lon,
-                    'accessible': accessible,
                     'type': 'building'
                 }
             nodes_in_building.append(node_id)
 
             # Connect this node to the nearest node in the path network, excluding other building nodes
             connect_node_to_nearest_node(
-                node_id, lat, lon, nodes, edges, accessible, exclude_types={'building'}
+                node_id, lat, lon, nodes, edges, exclude_types={'building'}
             )
 
         # Create edges between consecutive nodes (forming the building perimeter)
@@ -223,7 +227,6 @@ for feature in polygon_features:
                 'to': to_node_id,
                 'distance': distance,
                 'time': time,
-                'accessible': accessible,
                 'name': feature_name
             }
             edges.append(edge)
@@ -256,13 +259,12 @@ for feature in point_features:
                 'name': feature_name,
                 'lat': lat,
                 'lng': lon,
-                'accessible': accessible,
                 'type': 'building'
             }
             
         # Connect to path network
         connect_node_to_nearest_node(
-            node_id, lat, lon, nodes, edges, accessible, exclude_types={'building'}
+            node_id, lat, lon, nodes, edges, exclude_types={'building'}
         )
 
 # Build the final JSON structure
